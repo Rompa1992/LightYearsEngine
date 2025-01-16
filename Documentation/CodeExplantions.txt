@@ -1,0 +1,84 @@
+# Application() Process
+
+This document explains the `Application` creation process, including how dynamic allocation and polymorphism work in the context of the `GetApplication()` function.
+
+---
+
+## What Does `GetApplication()` Do?
+- `GetApplication()` is a global factory function that creates and returns a pointer to an `Application` object.
+- Specifically, it dynamically allocates a `GameApplication` object (a subclass of `Application`) on the heap using `new`.
+- The returned object is treated as an `Application*` due to inheritance, allowing polymorphism to work correctly.
+
+---
+
+## Why Use Pointers in `GetApplication()`?
+
+### Dynamic Allocation
+- The object created with `new` persists beyond the scope of `GetApplication()` and can be explicitly deleted when no longer needed.
+
+### Polymorphism
+- Using a pointer to the base class (`Application*`), the program can interact with the derived class (`GameApplication`) and call overridden methods dynamically.
+- For example, calling `Run()` on `Application*` will invoke the `GameApplication::Run()` implementation if it’s overridden.
+
+---
+
+## How Is It Used in `main()`?
+- The pointer returned by `GetApplication()` is stored in a base class pointer (`Application*`).
+- The program then calls the `Run()` method, which leverages polymorphism to execute the derived class implementation:
+
+```cpp
+ly::Application* app = GetApplication(); // Get a dynamically allocated GameApplication
+app->Run();                              // Calls GameApplication::Run() due to polymorphism
+delete app;                              // Cleans up memory to avoid leaks
+```
+
+---
+
+## What Happens If You Use an Object Instead of a Pointer?
+
+Changing `ly::Application* app = GetApplication();` to `ly::Application app = GetApplication();` causes a compilation error:
+
+1. **Pointer to Object Assignment**:
+   - The compiler cannot assign a pointer (`Application*`) to an object (`Application`).
+
+2. **Dereferencing the Pointer**:
+   - If you dereference the pointer:
+     ```cpp
+     ly::Application app = *GetApplication(); // Dereference the pointer to copy the object
+     ```
+     - **Object Slicing**: The base class portion of the `GameApplication` is copied into `app`, losing derived class data and behavior.
+     - **Memory Leak**: The original `GameApplication` created with `new` is left on the heap, causing a memory leak since it is not deleted.
+
+---
+
+## Best Practices for `GetApplication()`
+
+1. **Use Pointers When Polymorphism Is Needed**:
+   ```cpp
+   ly::Application* app = GetApplication();
+   app->Run(); // Calls the overridden version in GameApplication
+   delete app; // Properly cleans up the dynamically allocated object
+   ```
+
+2. **Return an Object Directly If Polymorphism Is Not Required**:
+   ```cpp
+   ly::Application GetApplication() {
+       return ly::GameApplication(); // Returns an object, not a pointer
+   }
+   ```
+
+---
+
+## Why Stick to Pointers Here?
+
+### Pointers Enable:
+- Dynamic allocation for explicit lifetime control.
+- Polymorphism, allowing derived class methods to override base class methods dynamically.
+
+### Returning an Object Instead:
+- Simplifies memory management but removes polymorphism, as the type of the object is fixed at compile time.
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

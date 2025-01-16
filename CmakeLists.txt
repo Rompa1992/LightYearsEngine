@@ -6,12 +6,26 @@ project(LightYears
 )
 
 set(CMAKE_CXX_STANDARD			14)
-SET(CMAKE_CXX_STANDARD_REQUIRED 0N)
-SET(CMAKE_CXX_EXTENSIONS	   OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS	   OFF)
+
+include(FetchContent)
+set(SFML_LIB_NAME SFML)
+
+FetchContent_Declare(
+	${SFML_LIB_NAME}
+	GIT_REPOSITORY https://github.com/SFML/SFML
+	GIT_TAG 2.5.1
+	GIT_SHALLOW FALSE
+)
+
+FetchContent_MakeAvailable(${SFML_LIB_NAME})
 
 # create a variable
+set(LIGHT_YEARS_ENGINE_TARGET_NAME LightYearsEngine)
 set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 
-add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
-	${CMAKE_CURRENT_SOURCE_DIR}/LightYears/src/main.cpp
-)
+
+# include operation - to the CmakeLists in the following folders
+add_subdirectory(LightYearsEngine)
+add_subdirectory(LightYearsGame)
