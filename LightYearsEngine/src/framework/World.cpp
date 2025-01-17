@@ -38,12 +38,26 @@ namespace ly
 
 		_pendingActors.clear();
 
-		for (shared_ptr<Actor> actor : _actors)
+		for (auto iter = _actors.begin(); iter != _actors.end();)																// CodeExplanations->World.cpp: 'TickInternal()'
 		{
-			actor->Tick(deltaTime);
+			if (iter->get()->IsPendingDestroy())
+				iter = _actors.erase(iter);
+			else
+			{
+				iter->get()->TickInternal(deltaTime);
+				++iter;
+			}
 		}
 
 		Tick(deltaTime);
+	}
+
+	void World::Render(sf::RenderWindow& window)
+	{
+		for (auto actor : _actors)
+		{
+			actor->Render(window);
+		}
 	}
 
 	void World::Tick(float deltaTime)

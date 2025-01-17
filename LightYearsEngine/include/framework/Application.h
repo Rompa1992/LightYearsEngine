@@ -7,10 +7,10 @@ namespace ly
 {
 	class World;																													// Forward declaration of the World class to reduce dependencies and improve compilation times.
 
-	class Application
+	class Application																												// CodeExplanations->Application Process
 	{
 	public:
-		Application();
+		Application(unsigned int windowWidth, unsigned int windowHeight, const std::string& title, sf::Uint32 style);
 		void Run();
 
 		template<typename WorldType>
@@ -28,6 +28,9 @@ namespace ly
 		sf::Clock _tickClock;     
 
 		shared_ptr<World> _currentWorld;																							// Shared pointer to the currently loaded world, managing its lifetime.
+		sf::Clock _cleanCycleClock;
+		float _CleanCycleInterval;
+
 	};
 
 	template<typename WorldType>

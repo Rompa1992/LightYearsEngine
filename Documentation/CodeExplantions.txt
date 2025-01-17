@@ -82,3 +82,460 @@ Changing `ly::Application* app = GetApplication();` to `ly::Application app = Ge
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# World.cpp: 'TickInternal()'
+
+---
+
+## What Does `TickInternal()` Do?
+
+- `TickInternal()` processes actors in the game world during a single update cycle.
+- Specifically, it:
+  1. Adds new actors from `_pendingActors` to `_actors` and initializes them.
+  2. Removes actors flagged for destruction.
+  3. Updates all active actors by calling their `Tick(deltaTime)` function.
+  4. Updates the global state of the world itself via the `Tick(deltaTime)` function.
+
+---
+
+## Adding New Actors
+
+```cpp
+for (shared_ptr<Actor> actor : _pendingActors)
+{
+    _actors.push_back(actor);
+    actor->BeginPlayInternal();
+}
+
+_pendingActors.clear();
+```
+
+- `_pendingActors` is a list of actors waiting to be added to the game world.
+- Each actor is:
+  - Moved to `_actors`, the list of active actors.
+  - Initialized by calling `BeginPlayInternal()`, a function that sets up the actor when it becomes active.
+- After processing all pending actors, `_pendingActors` is cleared to prevent duplication.
+
+---
+
+## Removing Destroyed Actors
+
+```cpp
+for (auto iter = _actors.begin(); iter != _actors.end();)
+{
+    if (iter->get()->IsPendingDestroy())
+        iter = _actors.erase(iter);
+    else
+    {
+        iter->get()->Tick(deltaTime);
+        ++iter;
+    }
+}
+```
+
+- `_actors` is the list of all active actors.
+- The loop uses an iterator (`iter`) to traverse `_actors`.
+
+### Key Steps:
+1. **Check for Pending Destruction**:
+   - `iter->get()` retrieves the raw pointer from the `shared_ptr<Actor>`.
+   - `IsPendingDestroy()` checks if the actor is flagged for destruction.
+2. **Erase Actors Pending Destruction**:
+   - If `IsPendingDestroy()` returns `true`, the actor is removed using `erase()`.
+   - `erase()` returns an updated iterator, ensuring the loop continues correctly without invalidating the iterator.
+3. **Update Active Actors**:
+   - If the actor is not pending destruction, `Tick(deltaTime)` is called to update its state.
+   - The iterator is then incremented to process the next actor.
+
+---
+
+## Ticking the World
+
+```cpp
+Tick(deltaTime);
+```
+
+- The `Tick` function is likely a higher-level function responsible for updating the global state of the world.
+- It operates after all actors have been processed, ensuring that the world itself stays in sync with its actors.
+
+---
+
+## Full Code for Reference
+
+```cpp
+void World::TickInternal(float deltaTime)
+{
+    for (shared_ptr<Actor> actor : _pendingActors)
+    {
+        _actors.push_back(actor);
+        actor->BeginPlayInternal();
+    }
+
+    _pendingActors.clear();
+
+    for (auto iter = _actors.begin(); iter != _actors.end();)
+    {
+        if (iter->get()->IsPendingDestroy())
+            iter = _actors.erase(iter);
+        else
+        {
+            iter->get()->Tick(deltaTime);
+            ++iter;
+        }
+    }
+
+    Tick(deltaTime);
+}
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# config.h: `GetResourceDir()`
+
+## Purpose
+The `GetResourceDir` function determines the directory path for resource files (e.g., assets like textures and sounds) based on the build configuration (Debug or Release). This helps manage resources dynamically, ensuring the correct paths are used during development and after packaging.
+
+---
+
+## Behavior
+### **Release Build (`NDEBUG` defined)**
+- Returns a relative path: `@RESOURCE_FOLDER_NAME@/`
+- This corresponds to the `assets/` folder copied to the same directory as the game executable during the build process.
+- Example: `build/LightYearsGame/assets/`
+
+### **Debug Build (`NDEBUG` not defined)**
+- Returns an absolute path: `@RESOURCE_SRC_DIR@/`
+- This resolves to the source directory where the `assets` folder resides during development.
+- Example: `LightYearsGame/assets/`
+
+---
+
+## CMake Integration
+The `GetResourceDir` function uses placeholders (`@RESOURCE_FOLDER_NAME@` and `@RESOURCE_SRC_DIR@`) that are replaced during the CMake configuration process. These values are defined as follows:
+- `RESOURCE_FOLDER_NAME`: `"assets"`
+- `RESOURCE_SRC_DIR`: `${CMAKE_CURRENT_SOURCE_DIR}/assets`
+
+This setup ensures:
+1. The `assets` folder in the source directory is copied to the build directory during the build process.
+2. The executable can seamlessly access resources during both development and production.
+
+---
+
+## Workflow Example
+1. **Debug Build**:
+   - Resources are loaded directly from the source directory for easy editing and testing.
+   - Path Example: `LightYearsGame/assets/`
+
+2. **Release Build**:
+   - Resources are loaded from the `assets` folder in the build/output directory, which is populated by CMake during the build process.
+   - Path Example: `build/LightYearsGame/assets/`
+
+---
+
+## Key Notes
+- The **custom command** in the `LightYearsGame` CMake file ensures the `assets` folder is copied to the build directory:
+  ```cmake
+  add_custom_command(TARGET ${LIGHT_YEARS_GAME_TARGET_NAME}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${RESOURCE_SRC_DIR}
+      $<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}>/${RESOURCE_FOLDER_NAME}
+  )
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  # Class Explanation: `AssetManager`
+
+## Purpose
+The `AssetManager` class is designed as a **singleton**, meaning it ensures that only one instance of the class exists during the program's lifetime. This pattern is particularly useful for managing shared resources like textures, sounds, or fonts in a game, providing a centralized and consistent way to access assets.
+
+---
+
+## Behavior
+### **Singleton Design**
+- The class restricts instantiation by making the constructor `protected`, preventing external code from creating new instances.
+- A **static pointer** (`_assetManager`) is declared to hold the single instance of the class. It ensures all parts of the application access the same instance.
+
+### **Static Member**
+- `static AssetManager* _assetManager;`:
+  - A **static member** belongs to the class itself, rather than any individual instance.
+  - It ensures the singleton instance is shared across the entire application.
+
+---
+
+## How It Works
+1. **Creating the Singleton Instance**:
+   - The class likely includes a public static method (e.g., `GetInstance`) to create and return the single instance.
+   - This method would check if `_assetManager` is `nullptr` (not initialized) and, if so, create the instance.
+
+   Example:
+   ```cpp
+   static AssetManager* GetInstance()
+   {
+       if (!_assetManager)
+           _assetManager = new AssetManager();
+       return _assetManager;
+   }
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+   # AssetManager: `AssetManager::Get`
+
+## Purpose
+The `AssetManager::Get` function implements the singleton pattern. It ensures only one instance of the `AssetManager` class exists and provides a global way to access it. The function dynamically creates the instance on the heap if it doesn't already exist.
+
+---
+
+## Behavior
+### **Instance Creation**
+- The function checks if `_assetManager` (a static member of `AssetManager`) is `nullptr`.
+- If `_assetManager` is `nullptr`, a new instance of `AssetManager` is created using a `std::unique_ptr` and assigned to `_assetManager` via `std::move`.
+
+### **Returning the Singleton**
+- Once the instance exists, the function returns a reference to the object stored in `_assetManager` using `*` dereferencing.
+
+---
+
+## Key Concepts
+
+### **What is a `std::unique_ptr`?**
+- A **`std::unique_ptr`** is a smart pointer from **C++11** that provides exclusive ownership of a dynamically allocated object.
+- Once a `std::unique_ptr` manages an object, no other pointer can manage the same object.
+- When the `std::unique_ptr` is destroyed (e.g., goes out of scope), it automatically deletes the object it manages, ensuring no memory leaks.
+
+### **Why Use `std::unique_ptr`?**
+- To avoid manual memory management.
+- To ensure proper cleanup of dynamically allocated objects.
+- To prevent multiple ownership of the same object, which can lead to undefined behavior.
+
+### **Why is the Instance Created on the Heap?**
+- The singleton pattern requires an object to persist throughout the application's lifetime.
+- By allocating the instance on the heap, it remains in memory even if the `Get` function goes out of scope.
+
+---
+
+## `std::move` in this Context
+- **Purpose**: Transfers ownership of the newly created `std::unique_ptr` to `_assetManager`.
+- **Why It's Needed**:
+  - When creating a `std::unique_ptr` with `new AssetManager`, the temporary object (the newly created `std::unique_ptr`) cannot be copied because `std::unique_ptr` has **deleted copy constructors** and **copy assignment operators**. This is by design to prevent multiple `std::unique_ptr` instances from managing the same resource.
+  - Instead, ownership must be **explicitly transferred** using `std::move`, which converts the temporary object into an **rvalue reference**. This indicates that the resource can be safely "moved" from the temporary `std::unique_ptr` to `_assetManager`.
+
+### **Copying vs. Moving**
+- **Copying**:
+  - Duplicates the contents of one object into another.
+  - For pointers, copying would result in two pointers managing the same resource, leading to issues like double deletion.
+- **Moving**:
+  - Transfers ownership of a resource from one object to another.
+  - After the move, the original object is left in a valid but empty state (e.g., its pointer is set to `nullptr`).
+
+### **How `std::move` Works Here**
+1. The temporary `std::unique_ptr` created by `std::unique_ptr<AssetManager>{new AssetManager}` owns the `AssetManager` instance.
+2. `std::move` transfers ownership of this `std::unique_ptr` to `_assetManager`.
+3. The temporary `std::unique_ptr` no longer owns the `AssetManager` instance, ensuring no double ownership.
+
+### **Advantages of Using `std::move`**
+- Prevents accidental copying of the `std::unique_ptr`.
+- Clearly conveys that ownership transfer is intentional and explicit.
+- Ensures `std::unique_ptr`'s memory management guarantees are upheld.
+
+### **Post-Move State**
+After `std::move`, the temporary `std::unique_ptr` becomes empty. Attempting to dereference or use it would result in undefined behavior, but this isn't a concern here since the object is immediately assigned to `_assetManager`.
+
+---
+
+### **Example Without `std::move`**
+If `std::move` were omitted, the following error would occur:
+```plaintext
+error: use of deleted function ‘std::unique_ptr(const std::unique_ptr&)’
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# AssetManager: `LoadTexture()`
+
+## Purpose
+The `LoadTexture` function loads and manages textures efficiently using a **singleton** `AssetManager` class. It ensures that each texture is loaded only once and reuses previously loaded textures when requested, avoiding redundant operations and saving memory.
+
+---
+
+## Behavior
+### **Key Steps**
+1. **Check for an Existing Texture**:
+   - The function uses `_loadedTextureMap` (a `Dictionary` mapping file paths to `shared_ptr<sf::Texture>`) to check if a texture is already loaded.
+   - The `find` method retrieves an iterator pointing to the element matching the `path` key.
+
+2. **If Texture Is Found**:
+   - If the key is found (`found != _loadedTextureMap.end()`), the function returns the corresponding `shared_ptr` using `found->second`.
+
+3. **If Texture Is Not Found**:
+   - A new `sf::Texture` object is created and wrapped in a `shared_ptr`.
+   - The `loadFromFile` method attempts to load the texture from the given `path`.
+     - **On Success**:
+       - The texture is added to `_loadedTextureMap` with `path` as the key.
+       - The `shared_ptr` is returned.
+     - **On Failure**:
+       - A `shared_ptr` containing `nullptr` is returned to indicate failure.
+
+---
+
+## Key Concepts
+### **`std::unordered_map` (Alias: `Dictionary`)**
+- **Purpose**: A hash-based container that stores key-value pairs and provides fast lookups.
+- **Advantages Over a List**:
+  - **O(1) Average Lookup Time**:
+    - Unlike a list, where lookups require linear time (O(n)) since every element must be checked, an unordered map uses a hash table to find elements in constant average time.
+  - **Key-Value Mapping**:
+    - Each key (file path) maps to a unique value (`shared_ptr<sf::Texture>`), making it ideal for associating data like file paths with corresponding textures.
+
+- **How It Works**:
+  - Internally, `std::unordered_map` uses a hash function to compute a hash value for keys, determining where the value is stored. Collisions (keys with the same hash) are handled using techniques like chaining.
+
+- **Why Not Use a List**:
+  - A list would require iterating through each element to find a match, which is inefficient for large datasets.
+  - Unlike a list, an unordered map allows direct access to elements using a key, making it significantly faster for lookups.
+
+---
+
+### **Key Methods in Use**
+1. **`.find(key)`**:
+   - Searches for an element with the given key (`path`) in the map.
+   - Returns an iterator:
+     - **If Found**: Points to the matching element.
+     - **If Not Found**: Points to `end()` (past-the-end iterator).
+
+2. **`.end()`**:
+   - Represents an iterator pointing just past the last element in the map.
+   - Used to check if a key was not found (`found == _loadedTextureMap.end()`).
+
+3. **`.second`**:
+   - Accesses the value associated with a key-value pair.
+   - When iterating over or searching in the map, `found->second` retrieves the `shared_ptr<sf::Texture>` corresponding to the key.
+
+---
+
+### **Smart Pointers**
+1. **`std::shared_ptr`**:
+   - Used here to manage the lifetime of `sf::Texture` objects.
+   - Allows multiple parts of the program to share ownership of the same texture without duplicating it.
+   - Automatically deletes the texture when the last reference is destroyed, preventing memory leaks.
+
+2. **Why Use `shared_ptr`?**
+   - Multiple textures may be used simultaneously by different parts of the program.
+   - By using `shared_ptr`, you avoid manually tracking and managing the texture's lifetime.
+
+---
+
+## Workflow Example
+### Scenario: Loading a Texture for the First Time
+1. The `path` key is not found in `_loadedTextureMap`.
+2. A new `sf::Texture` is created and loaded from the file at `path`.
+3. The texture is added to `_loadedTextureMap` with the `path` as its key.
+4. The `shared_ptr` to the texture is returned.
+
+### Scenario: Requesting an Already-Loaded Texture
+1. The `path` key is found in `_loadedTextureMap`.
+2. The function retrieves the `shared_ptr` stored in `found->second`.
+3. The existing `shared_ptr` is returned without creating a new texture.
+
+---
+
+## Key Notes
+- **Efficiency**:
+  - Using a `Dictionary` ensures fast texture lookups and avoids redundant loading.
+- **Memory Management**:
+  - `shared_ptr` ensures textures are automatically cleaned up when no longer needed.
+- **Error Handling**:
+  - If a texture fails to load, the function returns `nullptr`, providing a clear way to signal errors.
+
+---
+
+## Example Output
+```cpp
+auto texture1 = AssetManager::Get().LoadTexture("player.png"); // Loads texture
+auto texture2 = AssetManager::Get().LoadTexture("player.png"); // Reuses loaded texture
+auto texture3 = AssetManager::Get().LoadTexture("invalid.png"); // Returns nullptr
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# AssetManager: `CleanCycle()`
+
+## Purpose
+The `CleanCycle` function ensures efficient memory management by cleaning up textures in `_loadedTextureMap` that are no longer being used. If a texture is exclusively owned by the `AssetManager` (i.e., its `shared_ptr` reference count is 1), it is removed from the map.
+
+---
+
+## Behavior
+### **Key Steps**
+1. **Iteration Through the Map**:
+   - The function iterates over `_loadedTextureMap` using a `for` loop with an iterator (`auto iter`).
+
+2. **Check for Exclusive Ownership**:
+   - For each element, `iter->second.unique()` checks if the `shared_ptr` (pointed to by `iter->second`) is the only reference to the texture.
+
+3. **Erase Unused Textures**:
+   - If the texture is exclusively owned (`unique()` returns `true`), the iterator is updated by erasing the texture from `_loadedTextureMap` using `erase`.
+
+4. **Advance the Iterator**:
+   - If the texture is still in use (`unique()` returns `false`), the iterator is incremented with `++iter`.
+
+---
+
+## Key Concepts
+### **`auto` in This Context**
+- **Purpose**:
+  - The `auto` keyword allows the compiler to deduce the type of the variable `iter` based on the type of `_loadedTextureMap.begin()`.
+- **Deduced Type**:
+  - Since `_loadedTextureMap` is a `Dictionary<std::string, shared_ptr<sf::Texture>>` (alias for `std::unordered_map`), the type of `iter` is deduced as:
+    ```cpp
+    std::unordered_map<std::string, std::shared_ptr<sf::Texture>>::iterator
+    ```
+- **Why Use `auto`?**:
+  - Improves code readability by avoiding lengthy type declarations.
+  - Reduces the chance of errors when changing the container type (e.g., switching from `std::unordered_map` to another container).
+
+---
+
+### **`.second` in This Context**
+- **Purpose**:
+  - Accesses the value part of the key-value pair stored in `_loadedTextureMap`.
+- **Details**:
+  - Each element in a `std::unordered_map` is a `std::pair`, consisting of:
+    ```cpp
+    std::pair<const std::string, std::shared_ptr<sf::Texture>>
+    ```
+    - `.first`: The key (in this case, a `std::string` representing the texture path).
+    - `.second`: The value (in this case, a `std::shared_ptr<sf::Texture>` pointing to the texture).
+  - `iter->second` retrieves the `shared_ptr<sf::Texture>` associated with the current key.
+
+---
+
+### **`unique()` Method**
+- **What It Does**:
+  - `unique()` checks whether a `shared_ptr` is the sole owner of the resource it manages.
+- **Returns**:
+  - `true`: If the reference count is 1 (no other `shared_ptr` instances share ownership of the texture).
+  - `false`: If the reference count is greater than 1 (other parts of the program are still using the texture).
+
+---
+
+### **`erase()` and Iterator Update**
+- **`_loadedTextureMap.erase(iter)`**:
+  - Removes the element pointed to by `iter` from `_loadedTextureMap`.
+  - Returns an iterator pointing to the next element in the map.
+- **Why Update `iter`?**:
+  - After erasing an element, the iterator becomes invalid. Updating it ensures the loop continues safely.
+
+---
+
+## Workflow Example
+### Scenario: Cleaning Up Unused Textures
+1. `_loadedTextureMap` contains:
+   ```cpp
+   {
+       {"texture1.png", shared_ptr<sf::Texture>}, // In use
+       {"texture2.png", shared_ptr<sf::Texture>}, // Unique (unused)
+       {"texture3.png", shared_ptr<sf::Texture>}  // In use
+   }

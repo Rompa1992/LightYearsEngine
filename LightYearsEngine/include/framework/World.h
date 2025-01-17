@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SFML/Graphics.hpp>
+
 #include "framework/Core.h"
 
 namespace ly
@@ -14,6 +16,7 @@ namespace ly
 
 		void BeginPlayInternal();
 		void TickInternal(float deltaTime);
+		void Render(sf::RenderWindow& window);
 
 		virtual ~World();																											// Use a virtual destructor in base classes to ensure proper cleanup of derived class objects. This ensures that derived class destructors are called properly during deletion, preventing resource leaks or undefined behaviour
 

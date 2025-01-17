@@ -1,16 +1,18 @@
 #include "framework/Application.h"
+#include "framework/AssetManager.h"
 #include "framework/Core.h"
 #include "framework/World.h"
 
 namespace ly
 {
-	Application::Application()
-		: _window{ sf::VideoMode(1024, 1440), "Light Years Window" },
+	Application::Application(unsigned int windowWidth, unsigned int windowHeight, const std::string& title, sf::Uint32 style)
+		: _window{ sf::VideoMode(windowWidth, windowHeight), title, style },
 		_targetFrameRate{ 60.f },
 		_tickClock{},
-		_currentWorld{ nullptr }
+		_currentWorld{ nullptr },
+		_cleanCycleClock{},
+		_CleanCycleInterval{2.f}
 	{
-
 
 	}
 
@@ -48,6 +50,12 @@ namespace ly
 		{
 			_currentWorld->TickInternal(deltaTime);
 		}
+
+		if (_cleanCycleClock.getElapsedTime().asSeconds() >= _CleanCycleInterval)
+		{
+			_cleanCycleClock.restart();
+			AssetManager::Get().CleanCycle();
+		}
 	}
 
 	void Application::Tick(float deltaTime)
@@ -64,6 +72,10 @@ namespace ly
 
 	void Application::Render()
 	{
-
+		if (_currentWorld)
+		{
+			_currentWorld->Render(_window);
+		}
 	}
 }
+  
