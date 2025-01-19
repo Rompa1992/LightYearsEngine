@@ -2,6 +2,12 @@
 
 namespace ly
 {
+	AssetManager::AssetManager()
+		: _rootDirectory{}
+	{
+
+	}
+
 	unique_ptr<AssetManager> AssetManager::_assetManager{ nullptr };
 
 	AssetManager& AssetManager::Get()																							// CodeExplanations->AssetManager: `AssetManager::Get
@@ -17,11 +23,11 @@ namespace ly
 		auto found = _loadedTextureMap.find(path);																				// returns an iterator
 		
 		if (found != _loadedTextureMap.end())
-			return found->second;
+			return found->second;																								// if texture already exists as a shared_ptr, use it. 
 
-		shared_ptr<sf::Texture> newTexture{ new sf::Texture };
+		shared_ptr<sf::Texture> newTexture{ new sf::Texture };																	
 
-		if (newTexture->loadFromFile(path))
+		if (newTexture->loadFromFile(_rootDirectory + path))
 		{
 			_loadedTextureMap.insert({ path, newTexture });
 			return newTexture;
@@ -45,11 +51,11 @@ namespace ly
 
 	}
 
-
-	AssetManager::AssetManager()
+	void AssetManager::SetAssetRootDirectory(const std::string& rootDirectory)
 	{
-
+		_rootDirectory = rootDirectory;
 	}
+
 }
 
 

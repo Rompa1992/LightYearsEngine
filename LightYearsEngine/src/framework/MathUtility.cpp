@@ -2,23 +2,21 @@
 
 namespace ly
 {
-	const float PI = 3.1415926535;
+	constexpr float PI = 3.1415926535f;
 
-	sf::Vector2f RotationToVector(float rotation)
+	sf::Vector2f RotationToVector(const float rotation)
 	{
 		float radians = DegreesToRadians(rotation);
 		return sf::Vector2f(std::cos(radians), std::sin(radians));
 	}
 
-	float DegreesToRadians(float degrees)
+	inline float DegreesToRadians(const float degrees)
 	{
-		float radians = degrees * (PI / 180.f);
-		return radians;
+		return degrees * (PI / 180.f);
 	}
 
-	float RadiansToDegrees(float radians)
+	inline float RadiansToDegrees(const float radians)
 	{
-		float degrees = radians * (180.f / PI);
-		return degrees;
+		return radians * (180.f / PI);
 	}
 }

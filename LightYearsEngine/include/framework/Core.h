@@ -8,7 +8,7 @@
 namespace ly
 {
 	template<typename T>
-	using unique_ptr = std::unique_ptr<T>;		  																					// The using keyword is a modern replacement for typedef, introduced in C++11.
+	using unique_ptr = std::unique_ptr<T>;		  																			// The using keyword is a modern replacement for typedef, introduced in C++11.
 
 	template<typename T>
 	using shared_ptr = std::shared_ptr<T>;
@@ -19,10 +19,10 @@ namespace ly
 	template<typename T>
 	using List = std::vector<T>;
 
-	template<typename keyType, typename valType, typename predicate = std::less<keyType>>											// predicate "less" = Ascending order (1 -> 2 -> 3), predicate "greater" = Decending order (3 -> 2 -> 1)
+	template<typename keyType, typename valType, typename predicate = std::less<keyType>>									// predicate "less" = Ascending order (1 -> 2 -> 3), predicate "greater" = Decending order (3 -> 2 -> 1)
 	using Map = std::map<keyType, valType, predicate>;
 
-	template<typename keyType, typename valType, typename hasher = std::hash<keyType>>												// hash: A function or object that generates a unique hash value for a given key.
+	template<typename keyType, typename valType, typename hasher = std::hash<keyType>>										// hash: A function or object that generates a unique hash value for a given key.
 	using Dictionary = std::unordered_map<keyType, valType, hasher>;
 
 

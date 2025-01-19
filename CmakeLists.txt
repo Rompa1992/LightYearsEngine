@@ -29,3 +29,14 @@ set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 # include operation - to the CmakeLists in the following folders
 add_subdirectory(LightYearsEngine)
 add_subdirectory(LightYearsGame)
+
+# Apply compiler options
+if(MSVC)
+	# Set warnings as errors and the highest warning level for MSVC
+	target_compile_options(${LIGHT_YEARS_ENGINE_TARGET_NAME} PRIVATE
+		/W4  # Enable highest warning level
+	)
+	target_compile_options(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE
+		/W4 
+	)
+endif()

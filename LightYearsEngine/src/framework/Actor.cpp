@@ -2,6 +2,7 @@
 #include "framework/AssetManager.h"
 #include "framework/Core.h"
 #include "framework/MathUtility.h"
+#include "framework/World.h"
 
 namespace ly
 {
@@ -41,7 +42,7 @@ namespace ly
 
 	void Actor::Tick(float deltaTime)
 	{
-		LOG("Actor Ticking");
+		//LOG("Actor Ticking");
 	}
 
 	void Actor::SetTexture(const std::string& texturePath)
@@ -94,6 +95,11 @@ namespace ly
 	sf::Vector2f Actor::GetActorForwardRight() const
 	{
 		return RotationToVector(GetActorRotation() + 90.f);
+	}
+
+	sf::Vector2u Actor::GetWindowSize() const
+	{
+		return _owningWorld->GetWindowSize();
 	}
 
 	void Actor::AddActorLocationOffset(const sf::Vector2f& offsetAmount)
