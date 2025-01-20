@@ -3,9 +3,9 @@
 
 namespace ly
 {
-		sf::Vector2f RotationToVector(const float rotation);
 		inline float DegreesToRadians(const float degrees);
 		inline float RadiansToDegrees(const float radians);
+		sf::Vector2f RotationToVector(const float rotation);
 
 		template<typename T>
 		float GetVectorLength(const sf::Vector2<T>& vector)

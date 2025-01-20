@@ -41,13 +41,8 @@ namespace ly
 
 		for (auto iter = _actors.begin(); iter != _actors.end();)																// CodeExplanations->World.cpp: 'TickInternal()'
 		{
-			if (iter->get()->IsPendingDestroy())
-				iter = _actors.erase(iter);
-			else
-			{
-				iter->get()->TickInternal(deltaTime);
-				++iter;
-			}
+			iter->get()->TickInternal(deltaTime);																				// Clean cylcle implementation added to function "World::CleanCycle()"
+			++iter;
 		}
 
 		Tick(deltaTime);
@@ -58,6 +53,17 @@ namespace ly
 		for (auto actor : _actors)
 		{
 			actor->Render(window);
+		}
+	}
+
+	void World::CleanCycle()
+	{
+		for (auto iter = _actors.begin(); iter != _actors.end();)																// CodeExplanations->World.cpp: 'TickInternal()'
+		{
+			if (iter->get()->IsPendingDestroy())
+				iter = _actors.erase(iter);
+			else
+				++iter;
 		}
 	}
 

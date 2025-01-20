@@ -7,7 +7,7 @@
 
 namespace ly
 {
-	class World;
+	class World;																										// CodeExplanations->When to Forward Declare vs Include
 
 	class Actor : public Object
 	{
@@ -30,13 +30,18 @@ namespace ly
 		sf::Vector2f GetActorForwardDirection() const;
 		sf::Vector2f GetActorForwardRight() const;
 		sf::Vector2u GetWindowSize() const;
+		sf::FloatRect GetActorGlobalBounds() const;
 
 		void AddActorLocationOffset(const sf::Vector2f& offsetAmount);
 		void AddActorRotationOffset(const float offsetAmount);
 
+		World* GetWorld() const { return _owningWorld; }	
+
+		bool IsActorOutOfWindowBounds() const;
+
 		virtual ~Actor();
 	private:
-		void CenterPivot();																									// called in SetTexture();
+		void CenterPivot();																								// called in SetTexture();
 		World* _owningWorld;
 		bool _hasBeganPlay;
 

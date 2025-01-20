@@ -7,7 +7,7 @@
 namespace ly
 {
 	// Singleton Class
-	class AssetManager																												// CodeExplanations->Class Explanation: `AssetManager`
+	class AssetManager																												// CodeExplanations->Class: AssetManager{};
 	{
 	public:
 		static AssetManager& Get();

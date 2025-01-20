@@ -1,4 +1,30 @@
-# Application() Process
+# Index
+
+- Specific Solution Code:
+    - Class: Apllication{};
+    - World.cpp: TickInternal()
+    - config.h: GetResourceDir()
+    - Class: AssetManager{};
+    - AssetManager: AssetManager& Get()
+    - AssetManager: LoadTexture()
+    - AssetManager: CleanCycle()
+
+- Code Fundementals 
+    - When to Forward Declare vs Include
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# SPECIFIC SOLUTION CODE  
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+# Class: Apllication{};
 
 This document explains the `Application` creation process, including how dynamic allocation and polymorphism work in the context of the `GetApplication()` function.
 
@@ -83,7 +109,7 @@ Changing `ly::Application* app = GetApplication();` to `ly::Application app = Ge
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# World.cpp: 'TickInternal()'
+# World.cpp: TickInternal()
 
 ---
 
@@ -187,6 +213,9 @@ void World::TickInternal(float deltaTime)
     Tick(deltaTime);
 }
 
+```
+
+
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -245,7 +274,7 @@ This setup ensures:
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-  # Class Explanation: `AssetManager`
+# Class Explanation: AssetManager{};
 
 ## Purpose
 The `AssetManager` class is designed as a **singleton**, meaning it ensures that only one instance of the class exists during the program's lifetime. This pattern is particularly useful for managing shared resources like textures, sounds, or fonts in a game, providing a centralized and consistent way to access assets.
@@ -281,7 +310,7 @@ The `AssetManager` class is designed as a **singleton**, meaning it ensures that
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-   # AssetManager: `AssetManager::Get`
+# AssetManager: AssetManager::Get()
 
 ## Purpose
 The `AssetManager::Get` function implements the singleton pattern. It ensures only one instance of the `AssetManager` class exists and provides a global way to access it. The function dynamically creates the instance on the heap if it doesn't already exist.
@@ -349,11 +378,12 @@ After `std::move`, the temporary `std::unique_ptr` becomes empty. Attempting to 
 If `std::move` were omitted, the following error would occur:
 ```plaintext
 error: use of deleted function ‘std::unique_ptr(const std::unique_ptr&)’
+```
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# AssetManager: `LoadTexture()`
+# AssetManager: LoadTexture()
 
 ## Purpose
 The `LoadTexture` function loads and manages textures efficiently using a **singleton** `AssetManager` class. It ensures that each texture is loaded only once and reuses previously loaded textures when requested, avoiding redundant operations and saving memory.
@@ -456,11 +486,12 @@ The `LoadTexture` function loads and manages textures efficiently using a **sing
 auto texture1 = AssetManager::Get().LoadTexture("player.png"); // Loads texture
 auto texture2 = AssetManager::Get().LoadTexture("player.png"); // Reuses loaded texture
 auto texture3 = AssetManager::Get().LoadTexture("invalid.png"); // Returns nullptr
+```
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# AssetManager: `CleanCycle()`
+# AssetManager: CleanCycle()
 
 ## Purpose
 The `CleanCycle` function ensures efficient memory management by cleaning up textures in `_loadedTextureMap` that are no longer being used. If a texture is exclusively owned by the `AssetManager` (i.e., its `shared_ptr` reference count is 1), it is removed from the map.
@@ -539,3 +570,184 @@ The `CleanCycle` function ensures efficient memory management by cleaning up tex
        {"texture2.png", shared_ptr<sf::Texture>}, // Unique (unused)
        {"texture3.png", shared_ptr<sf::Texture>}  // In use
    }
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# CODE FUNDEMENTALS     
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+# When to Forward Declare vs Include
+
+This document provides guidelines on when to use forward declarations and when to include headers in your code.
+
+---
+
+## When to Use Forward Declaration
+
+### Definition
+- Forward declaration is the practice of declaring a class, struct, or function before its full definition is known.
+- Example:
+  ```cpp
+  namespace ly {
+      class Actor; // Forward declaration
+  }
+  ```
+
+### Use Cases
+1. **Pointers or References**:
+   - If you only use a pointer or reference to a class in your header file, forward declare it to avoid unnecessary dependencies.
+   - Example:
+     ```cpp
+     namespace ly {
+         class Actor; // Forward declaration
+
+         class Shooter {
+         public:
+             Shooter();
+
+         protected:
+             Shooter(Actor* actor); // Uses a pointer, forward declaration suffices
+         };
+     }
+     ```
+
+2. **Reduce Compilation Time**:
+   - Forward declarations avoid including unnecessary headers in your header files, reducing dependencies and speeding up compilation.
+
+3. **Break Cyclic Dependencies**:
+   - When two classes depend on each other, forward declaration can help avoid a cyclic dependency.
+
+### Caveats
+- Forward declarations only work if you don’t need to know the size or members of the class.
+- If you need to call methods or access members of the class, you must include its full definition.
+
+---
+
+## When to Include Headers
+
+### Definition
+- Including headers brings the full definition of a class, struct, or function into scope.
+- Example:
+  ```cpp
+  #include "Actor.h"
+  ```
+
+### Use Cases
+1. **Accessing Class Members**:
+   - If you need to access members or call methods of a class, you must include its header.
+   - Example:
+     ```cpp
+     namespace ly {
+         #include "Actor.h" // Include needed to use Actor methods
+
+         class Shooter {
+         public:
+             void InteractWithActor() {
+                 Actor actor;
+                 actor.DoSomething(); // Requires full definition
+             }
+         };
+     }
+     ```
+
+2. **Declaring Non-Pointer/Reference Members**:
+   - If your class contains an instance (not a pointer or reference) of another class, you must include its header to know its size.
+   - Example:
+     ```cpp
+     namespace ly {
+         #include "Actor.h"
+
+         class Shooter {
+         private:
+             Actor actorInstance; // Requires full definition for size
+         };
+     }
+     ```
+
+3. **Templates**:
+   - If your code involves templates, the full definition must be available in the translation unit where the template is instantiated.
+   - Example:
+     ```cpp
+     #include <vector>
+     #include "Actor.h"
+
+     std::vector<Actor> actors; // Requires full definition of Actor
+     ```
+
+4. **Inline Methods**:
+   - Inline methods in a class definition that use another class’s methods or members require the full definition.
+   - Example:
+     ```cpp
+     namespace ly {
+         #include "Actor.h"
+
+         class Shooter {
+         public:
+             void Interact() {
+                 Actor actor;
+                 actor.DoSomething(); // Full definition needed
+             }
+         };
+     }
+     ```
+
+---
+
+## Best Practices
+
+1. **Use Forward Declarations Whenever Possible**:
+   - Place forward declarations in headers to reduce dependencies and speed up compilation.
+
+2. **Include Headers in Implementation Files**:
+   - In `.cpp` files, include the headers needed to fully define and use the classes.
+   - Example:
+     ```cpp
+     #include "Shooter.h"
+     #include "Actor.h"
+
+     namespace ly {
+         Shooter::Shooter(Actor* actor) {
+             // Implementation here
+         }
+     }
+     ```
+
+3. **Avoid Including Unnecessary Headers**:
+   - Only include headers when you need full definitions.
+   - Prefer forward declarations in headers whenever possible.
+
+4. **Use Include Guards or `#pragma once`**:
+   - Protect your headers from multiple inclusions to prevent redefinition errors.
+   - Example:
+     ```cpp
+     #pragma once
+
+     namespace ly {
+         class Actor;
+
+         class Shooter {
+             // Shooter definition
+         };
+     }
+     ```
+
+---
+
+## Summary Table
+
+| Situation                                      | Forward Declare | Include |
+|-----------------------------------------------|-----------------|---------|
+| Use of pointers or references                 | Yes             | No      |
+| Access to class members or methods            | No              | Yes     |
+| Declaring non-pointer/reference members       | No              | Yes     |
+| Reducing compilation dependencies             | Yes             | No      |
+| Templates                                     | No              | Yes     |
+| Cyclic dependencies                           | Yes             | No      |
+

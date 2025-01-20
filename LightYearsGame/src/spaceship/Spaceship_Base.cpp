@@ -12,6 +12,11 @@ namespace ly
 		Actor::Tick(deltaTime);
 		AddActorLocationOffset(GetVelocity() * deltaTime);
 	}
+
+	void Spaceship_Base::Shoot()
+	{
+	}
+
 	void Spaceship_Base::SetVelocity(const sf::Vector2f& newVelocity)
 	{
 		_velocity = newVelocity;

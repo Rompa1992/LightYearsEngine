@@ -10,7 +10,7 @@ namespace ly
 
 	unique_ptr<AssetManager> AssetManager::_assetManager{ nullptr };
 
-	AssetManager& AssetManager::Get()																							// CodeExplanations->AssetManager: `AssetManager::Get
+	AssetManager& AssetManager::Get()																							// CodeExplanations->AssetManager: AssetManager& Get
 	{
 		if (!_assetManager)
 			_assetManager = std::move(unique_ptr<AssetManager>{ new AssetManager });
@@ -18,7 +18,7 @@ namespace ly
 		return *_assetManager;
 	}
 
-	shared_ptr<sf::Texture> AssetManager::LoadTexture(const std::string& path)													// CodeExplanations->AssetManager: `LoadTexture()`
+	shared_ptr<sf::Texture> AssetManager::LoadTexture(const std::string& path)													// CodeExplanations->AssetManager: LoadTexture()
 	{
 		auto found = _loadedTextureMap.find(path);																				// returns an iterator
 		

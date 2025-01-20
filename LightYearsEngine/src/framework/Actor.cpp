@@ -15,10 +15,6 @@ namespace ly
 		SetTexture(texturePath);
 	}
 
-	Actor::~Actor()
-	{
-		LOG("Actor was destroyed");
-	}
 
 	void ly::Actor::BeginPlayInternal()
 	{
@@ -89,17 +85,22 @@ namespace ly
 
 	sf::Vector2f Actor::GetActorForwardDirection() const
 	{
-		return RotationToVector(GetActorRotation());
+		return RotationToVector(GetActorRotation() - 90.f);
 	}
 
 	sf::Vector2f Actor::GetActorForwardRight() const
 	{
-		return RotationToVector(GetActorRotation() + 90.f);
+		return RotationToVector(GetActorRotation());
 	}
 
 	sf::Vector2u Actor::GetWindowSize() const
 	{
 		return _owningWorld->GetWindowSize();
+	}
+
+	sf::FloatRect Actor::GetActorGlobalBounds() const
+	{
+		return _sprite.getGlobalBounds();
 	}
 
 	void Actor::AddActorLocationOffset(const sf::Vector2f& offsetAmount)
@@ -112,9 +113,41 @@ namespace ly
 		SetActorRotation(GetActorRotation() + offsetAmount);
 	}
 
+	bool Actor::IsActorOutOfWindowBounds() const
+	{
+		const int windowWidth = GetWorld()->GetWindowSize().x;
+		const int windowHeight = GetWorld()->GetWindowSize().y;
+
+		const float actorWidth = GetActorGlobalBounds().width;
+		const float actorHeight = GetActorGlobalBounds().height;
+
+		const sf::Vector2f actorPosition = GetActorLocation();
+
+		if (actorPosition.x < -actorWidth)
+			return true;
+
+		if (actorPosition.x > windowWidth + actorWidth)
+			return true;
+
+		if (actorPosition.y < -actorHeight)
+			return true;
+
+		if (actorPosition.y > windowHeight + actorHeight)
+			return true;
+		
+		return false;
+	}
+
+	// Private Functions
+	// -----------------
 	void Actor::CenterPivot()
 	{
 		sf::FloatRect bound = _sprite.getGlobalBounds();
 		_sprite.setOrigin(bound.width / 2.f, bound.height / 2.f);
+	}
+
+	Actor::~Actor()
+	{
+		LOG("Actor was destroyed");
 	}
 }

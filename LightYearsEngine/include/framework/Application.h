@@ -5,9 +5,9 @@
 
 namespace ly
 {
-	class World;																													// Forward declaration of the World class to reduce dependencies and improve compilation times.
+	class World;																													// CodeExplanations->When to Forward Declare vs Include
 
-	class Application																												// CodeExplanations->Application Process
+	class Application																												// CodeExplanations->Class: Apllication{};
 	{
 	public:
 		Application(unsigned int windowWidth, unsigned int windowHeight, const std::string& title, sf::Uint32 style);

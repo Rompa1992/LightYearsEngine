@@ -10,6 +10,7 @@ namespace ly
 		Spaceship_Base(World* owningWorld, const std::string& texturePath = "");
 
 		virtual void Tick(float deltaTime) override;
+		virtual void Shoot();
 		
 		void SetVelocity(const sf::Vector2f& newVelocity);
 
