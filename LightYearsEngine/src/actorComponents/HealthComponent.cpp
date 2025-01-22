@@ -9,7 +9,7 @@ namespace ly
     {
     }
 
-    void HealthComponent::UpdateHealth(float amount)
+    void HealthComponent::ChangeHealth(float amount)
     {
         
         if (amount == 0) return;
@@ -32,21 +32,23 @@ namespace ly
         }
         else
             OnHealthRegen(amount);
+
+        onHealthChanged.BroadCast(amount, _currentHealth, _maxHealth);
     }
 
     void HealthComponent::OnDamageTaken(float amount)
     {
-        LOG("took damage:  %f, now health is: %f/%f", amount, _currentHealth, _maxHealth);
+        onTakenDamage.BroadCast(amount, _currentHealth, _maxHealth);
     }
 
     void HealthComponent::OnHealthEmpty()
     {
-        LOG("dead");
+        onHealthEmpty.BroadCast();
     }
 
     void HealthComponent::OnHealthRegen(float amount)
     {
-        LOG("took health regen:  %f, now health is: %f/%f", amount, _currentHealth, _maxHealth);
+        onHealthRegen.BroadCast(amount, _currentHealth, _maxHealth);
     }
 }
 

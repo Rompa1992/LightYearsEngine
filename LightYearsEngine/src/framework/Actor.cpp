@@ -15,12 +15,16 @@ namespace ly
 		_sprite{},
 		_texture{},
 		_physicsBody{nullptr},
-		_physicsEnabled{false}
+		_physicsEnabled{false},
+		_teamID{GetNeturalTeamID()}
 	{
 		SetTexture(texturePath);
 	}
 
+	/// Public Functions
+	/// -----------------
 
+	/// Void
 	void ly::Actor::BeginPlayInternal()
 	{
 		if (!_hasBeganPlay)
@@ -30,15 +34,41 @@ namespace ly
 		}
 	}
 
-	void ly::Actor::BeginPlay()
-	{
-		LOG("Actor began play");
-	}
-
 	void Actor::TickInternal(float deltaTime)
 	{
 		if (!IsPendingDestroy())
 			Tick(deltaTime);
+	}
+
+	void Actor::Render(sf::RenderWindow& window)
+	{
+		if (IsPendingDestroy())
+			return;
+
+		window.draw(_sprite);
+	}
+
+	void Actor::AddActorLocationOffset(const sf::Vector2f& offsetAmount)
+	{
+		SetActorLocation(GetActorLocation() + offsetAmount);
+	}
+
+	void Actor::AddActorRotationOffset(const float offsetAmount)
+	{
+		SetActorRotation(GetActorRotation() + offsetAmount);
+	}
+
+	/// Override
+	void Actor::Destroy()
+	{
+		UnInitPhysics();
+		Object::Destroy();
+	}
+
+	/// Virtual
+	void Actor::BeginPlay()
+	{
+		//LOG("Actor began play");
 	}
 
 	void Actor::Tick(float deltaTime)
@@ -48,20 +78,55 @@ namespace ly
 
 	void Actor::OnBeginActorOverlap(Actor* hitActor)
 	{
-		LOG("Overlapped");
+		//LOG("Actor Overlapped");
 	}
 
 	void Actor::OnEndActorOverlap(Actor* hitActor)
 	{
-		LOG("End Overlap");
+		//LOG("Actor End Overlap");
 	}
 
-	void Actor::Destroy()
+	void
+		Actor::ApplyDamage(float amount)
 	{
-		UnInitPhysics();
-		Object::Destroy();
+
 	}
 
+	/// bool
+	bool Actor::IsActorOutOfWindowBounds() const
+	{
+		const int windowWidth = GetWorld()->GetWindowSize().x;
+		const int windowHeight = GetWorld()->GetWindowSize().y;
+
+		const float actorWidth = GetActorGlobalBounds().width;
+		const float actorHeight = GetActorGlobalBounds().height;
+
+		const sf::Vector2f actorPosition = GetActorLocation();
+
+		if (actorPosition.x < -actorWidth)
+			return true;
+
+		if (actorPosition.x > windowWidth + actorWidth)
+			return true;
+
+		if (actorPosition.y < -actorHeight)
+			return true;
+
+		if (actorPosition.y > windowHeight + actorHeight)
+			return true;
+
+		return false;
+	}
+
+	bool Actor::IsOtherTeamHostile(Actor* other)
+	{
+		if (GetTeamID() == GetNeturalTeamID() || other->GetTeamID() == GetNeturalTeamID())
+			return false;
+
+		return GetTeamID() != other->GetTeamID();
+	}
+
+	/// Setters
 	void Actor::SetTexture(const std::string& texturePath)
 	{
 		_texture = AssetManager::Get().LoadTexture(texturePath);
@@ -73,15 +138,7 @@ namespace ly
 		int textureWidth = _texture->getSize().x;
 		int textureHeight = _texture->getSize().y;
 		_sprite.setTextureRect(sf::IntRect{ sf::Vector2i{0, 0}, sf::Vector2i{textureWidth, textureHeight} });
-		CenterPivot();
-	}
-
-	void Actor::Render(sf::RenderWindow& window)
-	{
-		if (IsPendingDestroy())
-			return;
-
-		window.draw(_sprite);
+		CenterSpritePivot();
 	}
 
 	void Actor::SetActorLocation(const sf::Vector2f& newLocation)
@@ -106,6 +163,7 @@ namespace ly
 			UnInitPhysics();
 	}
 
+	/// Getters
 	sf::Vector2f Actor::GetActorLocation() const
 	{
 		return _sprite.getPosition();
@@ -136,44 +194,14 @@ namespace ly
 		return _sprite.getGlobalBounds();
 	}
 
-	void Actor::AddActorLocationOffset(const sf::Vector2f& offsetAmount)
+	Actor::~Actor()
 	{
-		SetActorLocation(GetActorLocation() + offsetAmount);
+		LOG("Actor was destroyed");
 	}
 
-	void Actor::AddActorRotationOffset(const float offsetAmount)
-	{
-		SetActorRotation(GetActorRotation() + offsetAmount);
-	}
-
-	bool Actor::IsActorOutOfWindowBounds() const
-	{
-		const int windowWidth = GetWorld()->GetWindowSize().x;
-		const int windowHeight = GetWorld()->GetWindowSize().y;
-
-		const float actorWidth = GetActorGlobalBounds().width;
-		const float actorHeight = GetActorGlobalBounds().height;
-
-		const sf::Vector2f actorPosition = GetActorLocation();
-
-		if (actorPosition.x < -actorWidth)
-			return true;
-
-		if (actorPosition.x > windowWidth + actorWidth)
-			return true;
-
-		if (actorPosition.y < -actorHeight)
-			return true;
-
-		if (actorPosition.y > windowHeight + actorHeight)
-			return true;
-		
-		return false;
-	}
-
-	// Private Functions
-	// -----------------
-	void Actor::CenterPivot()
+	/// Private Functions
+	/// -----------------
+	void Actor::CenterSpritePivot()
 	{
 		sf::FloatRect bound = _sprite.getGlobalBounds();
 		_sprite.setOrigin(bound.width / 2.f, bound.height / 2.f);
@@ -204,10 +232,5 @@ namespace ly
 
 			_physicsBody->SetTransform(pos, rotation);
 		}
-	}
-
-	Actor::~Actor()
-	{
-		LOG("Actor was destroyed");
 	}
 }

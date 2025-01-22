@@ -8,6 +8,7 @@ namespace ly
 		_speed{speed},
 		_damage{damage}
 	{
+		SetTeamID(owner->GetTeamID());
 	}
 
 
@@ -35,6 +36,15 @@ namespace ly
 	void Bullet::SetDamage(float newDamage)
 	{
 		_damage = newDamage;
+	}
+
+	void Bullet::OnBeginActorOverlap(Actor* other)
+	{
+		if (IsOtherTeamHostile(other))
+		{
+			other->ApplyDamage(GetDamage());
+			Destroy();
+		}
 	}
 
 	void Bullet::Move(float deltaTime)

@@ -46,7 +46,7 @@ namespace ly
 				iter = _loadedTextureMap.erase(iter);
 			}
 			else
-				++iter;
+				++iter;	
 		}
 
 	}

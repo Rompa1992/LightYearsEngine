@@ -10,6 +10,7 @@
     - AssetManager: CleanCycle()
     - PhysicsSystem: Singleton Design and Protected Constructor
     - PhysicsSystem::AddListener()
+    - Understanding The Delegate System in `ly` Namespace
 
 - Code Fundementals 
     - When to Forward Declare vs Include
@@ -736,6 +737,251 @@ return body;
 
 - **Purpose**: Provides a reference to the created `b2Body` for further use or tracking.
 
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
+
+
+# Understanding The Delegate System in `ly` Namespace
+
+## Introduction
+The `ly::Delegate` system is a robust implementation for event-driven programming in C++, designed to handle callbacks dynamically and manage listeners effectively. This enhanced system includes powerful features like weak pointer binding to avoid dangling references and automatic cleanup of expired listeners. This guide provides an in-depth explanation of its functionality and usage.
+
+---
+
+## Delegate Class
+The `Delegate` class template is a generic solution for managing callbacks with any number of arguments (`Args...`).
+
+### **Class Definition**
+```cpp
+#pragma once
+
+#include <functional>
+#include "framework/Core.h"
+
+namespace ly {
+
+    class Object;
+
+    template<typename... Args>
+    class Delegate {
+    public:
+        template<typename ClassName>
+        void BindAction(std::weak_ptr<Object> object, void(ClassName::* callback)(Args...)) {
+            std::function<bool(Args...)> callbackFunc = [object, callback](Args... args)->bool {
+                if (!object.expired()) {
+                    (static_cast<ClassName*>(object.lock().get())->*callback)(args...);
+                    return true;
+                }
+                return false;
+            };
+
+            _callbacks.push_back(callbackFunc);
+        }
+
+        void BroadCast(Args... args) {
+            for (auto iter = _callbacks.begin(); iter != _callbacks.end();) {
+                if ((*iter)(args...))
+                    ++iter;
+                else
+                    iter = _callbacks.erase(iter);
+            }
+        }
+
+    private:
+        List<std::function<bool(Args...)>> _callbacks;
+    };
+}
+```
+
+---
+
+# Explanation of `BindAction` in the Delegate System
+
+## Purpose of `BindAction`
+The `BindAction` method is a fundamental component of the `Delegate` system, enabling dynamic registration of member functions to a delegate. This registration ensures:
+
+1. When the delegate broadcasts an event, it invokes all registered member functions with the provided arguments.
+2. The method uses **weak pointers** to avoid dangling references to destroyed objects.
+3. It employs **lambdas** to encapsulate the binding and invocation logic into a single reusable construct.
+4. The storage of callbacks in a flexible structure (`std::function`) allows for type-erased management of various callable objects.
+
+---
+
+## Detailed Syntax and Behavior
+
+### **1. Template Parameters**
+The `Delegate` class and `BindAction` method use variadic templates (`Args...`) to support callbacks with any number and type of arguments.
+
+#### **Key Points About `Args...`:**
+- **Variadic Templates:**
+  - `Args...` allows the method to accept an arbitrary number of arguments with arbitrary types.
+  - These arguments are passed to the bound member function when the delegate broadcasts an event.
+- **Flexibility:**
+  - This design makes `Delegate` applicable to a wide range of use cases, such as UI event handling, game logic, or physics callbacks.
+
+---
+
+### **2. The Weak Pointer Parameter (`std::weak_ptr<Object> object`)
+
+#### **Why Use `std::weak_ptr`?**
+- **Ownership and Lifetime:**
+  - A `std::weak_ptr` does not contribute to the reference count of the object it references, unlike `std::shared_ptr`.
+  - This ensures the delegate does not unintentionally extend the lifetime of the object.
+- **Safe Access:**
+  - Before accessing the object, the `weak_ptr` can be checked for validity using its `expired()` method.
+  - To use the object, the `lock()` method creates a `shared_ptr`, ensuring safe access.
+
+#### **Usage in `BindAction`:**
+- The `object` parameter stores a weak reference to the object whose member function is being bound.
+- At invocation, the lambda checks the validity of the weak pointer and safely accesses the object using `lock()`.
+
+---
+
+### **3. The Callback Parameter (`void(ClassName::* callback)(Args...)`)
+
+#### **Understanding Member Function Pointers**
+- **Syntax:**
+  - A member function pointer has the syntax:
+    ```cpp
+    ReturnType(ClassName::* pointer)(Parameters...);
+    ```
+  - For example:
+    ```cpp
+    void (Spaceship_Base::*callback)(float);
+    ```
+    This is a pointer to a member function of `Spaceship_Base` that accepts a single `float` argument.
+
+- **Invocation:**
+  - Member function pointers require an instance of the class to be invoked:
+    ```cpp
+    (object.*callback)(arguments...);
+    ```
+
+---
+
+### **4. Lambda Function Construction**
+The `BindAction` method encapsulates the binding logic into a lambda function, which is stored in the `_callbacks` list.
+
+#### **Lambda Structure:**
+```cpp
+std::function<bool(Args...)> callbackFunc = [object, callback](Args... args) -> bool {
+    if (!object.expired()) {
+        (static_cast<ClassName*>(object.lock().get())->*callback)(args...);
+        return true;
+    }
+    return false;
+};
+```
+
+#### **Breakdown of Lambda Logic:**
+1. **Capture List (`[object, callback]`):**
+   - Captures the weak pointer (`object`) and member function pointer (`callback`) by value.
+
+2. **Object Expiry Check:**
+   - `if (!object.expired())` ensures the object is still valid before invoking the callback.
+   - Prevents accessing destroyed objects.
+
+3. **Locking the Weak Pointer:**
+   - `object.lock()` converts the `weak_ptr` into a `shared_ptr`.
+   - This ensures safe access to the object during callback invocation.
+
+4. **Static Casting:**
+   - `static_cast<ClassName*>(object.lock().get())` casts the raw pointer obtained from the `shared_ptr` to the appropriate class type (`ClassName*`).
+   - This is necessary because `Object` is a base class, and the actual type of the object is `ClassName` (or a derived type).
+
+5. **Invoke the Callback:**
+   - `(static_cast<ClassName*>(object.lock().get())->*callback)(args...)` dereferences the member function pointer and invokes it with the provided arguments.
+
+6. **Return Value:**
+   - Returns `true` if the callback executed successfully (i.e., the object was valid).
+   - Returns `false` if the object was invalid (expired).
+
+---
+
+### **5. Storing the Lambda**
+The lambda function is wrapped in a `std::function` and stored in the `_callbacks` list:
+```cpp
+_callbacks.push_back(callbackFunc);
+```
+
+#### **Why Use `std::function`:**
+- **Type Erasure:**
+  - `std::function` can store any callable object that matches the specified signature (`bool(Args...)`).
+  - This allows the delegate to store and manage callbacks of varying types (lambdas, function pointers, `std::bind` expressions, etc.).
+- **Uniform Interface:**
+  - Simplifies the invocation of callbacks, as all stored objects conform to the same interface.
+
+---
+
+### **6. Advantages of This Design**
+
+#### **1. Safety:**
+- The use of `std::weak_ptr` ensures that callbacks tied to destroyed objects are not invoked, preventing undefined behavior or crashes.
+
+#### **2. Flexibility:**
+- The use of variadic templates (`Args...`) allows the delegate to support callbacks with any number and type of arguments.
+
+#### **3. Encapsulation:**
+- The lambda function encapsulates the complex logic for member function invocation into a reusable and easily storable format.
+
+#### **4. Efficiency:**
+- Expired callbacks are ignored during invocation, and no unnecessary strong references to objects are maintained.
+
+---
+
+## Conclusion
+The `BindAction` method is a sophisticated mechanism for safely and efficiently binding member functions to delegates. By combining the power of weak pointers, lambdas, and type-erased storage, it ensures robust callback management while maintaining flexibility and safety. This makes it an essential tool for event-driven systems in modern C++ applications.
+
+
+## Key Features and Benefits
+1. **Weak Pointer Binding:**
+   - Ensures no strong ownership of objects, preventing memory leaks or dangling references.
+
+2. **Automatic Cleanup:**
+   - Expired callbacks are removed during broadcasting, maintaining a clean and efficient callback list.
+
+3. **Generic Design:**
+   - Supports any number and type of arguments, making it highly versatile.
+
+4. **Event Broadcasting:**
+   - Triggers all bound callbacks safely and efficiently.
+
+---
+
+## Practical Example
+### **Spaceship Health Event System**
+The delegate system integrates seamlessly with game actors, like `Spaceship_Base`, to manage health-related events dynamically.
+
+#### **Binding and Broadcasting**
+```cpp
+_healthComponent.BroadcastHealthChange.BindAction(GetWeakRef(), &Spaceship_Base::OnHealthChanged);
+_healthComponent.BroadcastHealthChange.BroadCast(-25.0f, 75.0f, 100.0f);
+```
+- The first line binds the `OnHealthChanged` method to the health change event.
+- The second line broadcasts a health reduction of `25.0f`, leaving the spaceship at `75.0f` health out of `100.0f`.
+
+#### **Callback Method Implementation**
+```cpp
+void Spaceship_Base::OnHealthChanged(float amount, float currentHealth, float maxHealth) {
+    std::cout << "Health changed by: " << amount 
+              << ", Current: " << currentHealth 
+              << ", Max: " << maxHealth << std::endl;
+}
+```
+- Outputs details about the health change event.
+
+---
+
+## Conclusion
+The updated `ly::Delegate` system is a powerful, generic tool for managing callbacks and events in a safe, efficient, and flexible manner. Its use of weak pointers and automatic cleanup ensures robust memory management, making it ideal for complex systems like games.
+
+### **Key Takeaways**:
+- **Flexibility:** Supports any number and type of arguments.
+- **Safety:** Avoids dangling references with weak pointers.
+- **Efficiency:** Automatically cleans up expired callbacks during broadcasts.
+
+This system forms a core part of event-driven programming, promoting decoupled and maintainable codebases in game development or any application requiring dynamic callback management.
 
 
 

@@ -3,6 +3,7 @@
 
 namespace ly
 {
+		/// Vectors
 		inline float DegreesToRadians(const float degrees);
 		inline float RadiansToDegrees(const float radians);
 		sf::Vector2f RotationToVector(const float rotation);
@@ -27,4 +28,14 @@ namespace ly
 
 			return vectorToNormalize;
 		}
+
+		/// Lerps
+		float LerpFloat(float a, float b, float alpha);
+		sf::Color LerpColor(const sf::Color& a, const sf::Color& b, float alpha);
+		sf::Vector2f LerpVectorFloat(const sf::Vector2f& a, const sf::Vector2f& b, float alpha);
+
+		/// Random
+		float RandomRange(float min, float max);
+		sf::Vector2f RandomUnitVector();
+
 }

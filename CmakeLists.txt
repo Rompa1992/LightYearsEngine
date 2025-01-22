@@ -14,23 +14,22 @@ set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 find_package(Python REQUIRED)
 
 set(BOILERPLATE_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/add_boilerplate.py")
-set(BOILERPLATE_STAMP "${CMAKE_BINARY_DIR}/boilerplate_stamp")
 
-add_custom_command(
-    OUTPUT ${BOILERPLATE_STAMP}
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${BOILERPLATE_STAMP}  # Delete the stamp file
-    COMMAND ${Python_EXECUTABLE} ${BOILERPLATE_SCRIPT}          # Run the script
+# Run the Python boilerplate script during configuration
+execute_process(
+    COMMAND ${Python_EXECUTABLE} ${BOILERPLATE_SCRIPT}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Running Python boilerplate script for new .cpp and .h files."
-    VERBATIM
+    RESULT_VARIABLE BOILERPLATE_RESULT
+    OUTPUT_VARIABLE BOILERPLATE_OUTPUT
+    ERROR_VARIABLE BOILERPLATE_ERROR
 )
 
-# Ensure the script runs only if:
-# - The Python script changes
-# - The stamp file is missing
-set_source_files_properties(${BOILERPLATE_SCRIPT} PROPERTIES GENERATED TRUE)
-
-add_custom_target(run_boilerplate ALL DEPENDS ${BOILERPLATE_STAMP})
+# Check for success or failure of the script
+if (NOT BOILERPLATE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Boilerplate script failed with error: ${BOILERPLATE_ERROR}")
+else()
+    message(STATUS "Boilerplate script output:\n${BOILERPLATE_OUTPUT}")
+endif()
 
 # Subdirectories for engine and game
 add_subdirectory(LightYearsEngine)
