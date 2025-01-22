@@ -21,16 +21,20 @@ namespace ly
 		AssetManager::Get().SetAssetRootDirectory(GetResourceDir());
 		weak_ptr<World> newWorld = LoadWorld<World>();
 
-		newWorld.lock()->SpawnActor<Actor>();																				 // Converts weak_ptr to shared_ptr to ensure safe access before using the object.
 		_testPlayerSpaceship = newWorld.lock()->SpawnActor<PlayerSpaceship>();
 		_testPlayerSpaceship.lock()->SetActorLocation(sf::Vector2f(300.f, 490.f));
-		_counter = 0;
+
+		weak_ptr<Spaceship_Base> testSpaceship = newWorld.lock()->SpawnActor<Spaceship_Base>();
+		testSpaceship.lock()->SetTexture("SpaceShooterRedux/PNG/playerShip1_blue.png");
+		testSpaceship.lock()->SetActorLocation(sf::Vector2f{ 100.f, 50.f });
+		testSpaceship.lock()->SetActorRotation(180);
+		_counter = 0.f;
 	}
 	void GameApplication::Tick(float deltaTime)
 	{
 		_counter += deltaTime;
 
-		if (_counter > 20.f && !_testPlayerSpaceship.expired())
+		if (_counter > 2.f && !_testPlayerSpaceship.expired())
 			_testPlayerSpaceship.lock()->Destroy();	
 	}
 }

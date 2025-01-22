@@ -10,15 +10,6 @@ namespace ly
 	{
 	}
 
-	void Bullet::SetSpeed(float newSpeed)
-	{
-		_speed = newSpeed;
-	}
-
-	void Bullet::SetDamage(float newDamage)
-	{
-		_damage = newDamage;
-	}
 
 	void Bullet::Tick(float deltaTime)
 	{
@@ -28,6 +19,22 @@ namespace ly
 		if (IsActorOutOfWindowBounds())
 			Destroy();
 
+	}
+
+	void Bullet::BeginPlay()
+	{
+		Actor::BeginPlay();
+		SetEnablePhysics(true);
+	}
+
+	void Bullet::SetSpeed(float newSpeed)
+	{
+		_speed = newSpeed;
+	}
+
+	void Bullet::SetDamage(float newDamage)
+	{
+		_damage = newDamage;
 	}
 
 	void Bullet::Move(float deltaTime)

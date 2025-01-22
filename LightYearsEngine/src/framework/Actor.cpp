@@ -1,16 +1,21 @@
+#include <box2d/b2_body.h>
+
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
 #include "framework/Core.h"
 #include "framework/MathUtility.h"
+#include "framework/PhysicsSystem.h"
 #include "framework/World.h"
 
 namespace ly
 {
 	Actor::Actor(World* owningWorld, const std::string& texturePath)
 		: _owningWorld{ owningWorld },
-		  _hasBeganPlay{ false },
-		  _sprite{},
-		  _texture{}
+		_hasBeganPlay{ false },
+		_sprite{},
+		_texture{},
+		_physicsBody{nullptr},
+		_physicsEnabled{false}
 	{
 		SetTexture(texturePath);
 	}
@@ -41,6 +46,22 @@ namespace ly
 		//LOG("Actor Ticking");
 	}
 
+	void Actor::OnBeginActorOverlap(Actor* hitActor)
+	{
+		LOG("Overlapped");
+	}
+
+	void Actor::OnEndActorOverlap(Actor* hitActor)
+	{
+		LOG("End Overlap");
+	}
+
+	void Actor::Destroy()
+	{
+		UnInitPhysics();
+		Object::Destroy();
+	}
+
 	void Actor::SetTexture(const std::string& texturePath)
 	{
 		_texture = AssetManager::Get().LoadTexture(texturePath);
@@ -66,11 +87,23 @@ namespace ly
 	void Actor::SetActorLocation(const sf::Vector2f& newLocation)
 	{
 		_sprite.setPosition(newLocation);
+		UpddatePhysicsTransform();
 	}
 
 	void Actor::SetActorRotation(const float newRotation)
 	{
 		_sprite.setRotation(newRotation);
+		UpddatePhysicsTransform();
+	}
+
+	void Actor::SetEnablePhysics(bool enable)
+	{
+		_physicsEnabled = enable;
+
+		if (_physicsEnabled)
+			InitPhysics();
+		else
+			UnInitPhysics();
 	}
 
 	sf::Vector2f Actor::GetActorLocation() const
@@ -144,6 +177,33 @@ namespace ly
 	{
 		sf::FloatRect bound = _sprite.getGlobalBounds();
 		_sprite.setOrigin(bound.width / 2.f, bound.height / 2.f);
+	}
+
+	void Actor::InitPhysics()
+	{
+		if (!_physicsBody)
+			_physicsBody = PhysicsSystem::Get().AddListener(this);
+	}
+
+	void Actor::UnInitPhysics()
+	{
+		if (_physicsBody)
+		{
+			PhysicsSystem::Get().RemoveListener(_physicsBody);
+			_physicsBody = nullptr;
+		}
+	}
+
+	void Actor::UpddatePhysicsTransform()
+	{
+		if (_physicsBody)
+		{
+			float physicsScale = PhysicsSystem::Get().GetPhysicsScale();
+			b2Vec2 pos{ GetActorLocation().x * physicsScale, GetActorLocation().y * physicsScale };
+			float rotation = DegreesToRadians(GetActorRotation());
+
+			_physicsBody->SetTransform(pos, rotation);
+		}
 	}
 
 	Actor::~Actor()

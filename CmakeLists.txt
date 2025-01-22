@@ -1,30 +1,37 @@
 cmake_minimum_required(VERSION 3.31.4)
 
-project(LightYears
-	VERSION 1.0.0
-	LANGUAGES C CXX
-)
+project(LightYears VERSION 1.0.0 LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD			14)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS	   OFF)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# create a variable
+# Define target names
 set(LIGHT_YEARS_ENGINE_TARGET_NAME LightYearsEngine)
 set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 
+# Python integration for boilerplate script
+find_package(Python REQUIRED)
 
-# include operation - to the CmakeLists in the following folders
+set(BOILERPLATE_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/add_boilerplate.py")
+set(BOILERPLATE_STAMP "${CMAKE_BINARY_DIR}/boilerplate_stamp")
+
+add_custom_command(
+    OUTPUT ${BOILERPLATE_STAMP}
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${BOILERPLATE_STAMP}  # Delete the stamp file
+    COMMAND ${Python_EXECUTABLE} ${BOILERPLATE_SCRIPT}          # Run the script
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running Python boilerplate script for new .cpp and .h files."
+    VERBATIM
+)
+
+# Ensure the script runs only if:
+# - The Python script changes
+# - The stamp file is missing
+set_source_files_properties(${BOILERPLATE_SCRIPT} PROPERTIES GENERATED TRUE)
+
+add_custom_target(run_boilerplate ALL DEPENDS ${BOILERPLATE_STAMP})
+
+# Subdirectories for engine and game
 add_subdirectory(LightYearsEngine)
 add_subdirectory(LightYearsGame)
-
-# Apply compiler options
-if(MSVC)
-	# Set warnings as errors and the highest warning level for MSVC
-	target_compile_options(${LIGHT_YEARS_ENGINE_TARGET_NAME} PRIVATE
-		/W4  # Enable highest warning level
-	)
-	target_compile_options(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE
-		/W4 
-	)
-endif()

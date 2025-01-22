@@ -2,7 +2,7 @@
 
 namespace ly
 {
-	class Actor;																										// CodeExplanations->When to Forward Declare vs Include
+	class Actor;																									    // CodeExplanations->When to Forward Declare vs Include
 	class Shooter
 	{
 	public:

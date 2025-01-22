@@ -5,6 +5,8 @@
 #include "framework/Core.h"
 #include "framework/Object.h"
 
+	class b2Body;
+
 namespace ly
 {
 	class World;																										// CodeExplanations->When to Forward Declare vs Include
@@ -21,9 +23,14 @@ namespace ly
 
 		virtual void BeginPlay();
 		virtual void Tick(float deltaTime);
+		virtual void OnBeginActorOverlap(Actor* hitActor);
+		virtual void OnEndActorOverlap(Actor* hitActor);
+
+		virtual void Destroy() override;
 
 		void SetActorLocation(const sf::Vector2f& newLocation);
 		void SetActorRotation(const float newRotation);
+		void SetEnablePhysics(bool enable);
 
 		sf::Vector2f GetActorLocation() const;
 		float GetActorRotation() const;
@@ -42,11 +49,19 @@ namespace ly
 		virtual ~Actor();
 	private:
 		void CenterPivot();																								// called in SetTexture();
+		void InitPhysics();
+		void UnInitPhysics();
+		void UpddatePhysicsTransform();
+		
 		World* _owningWorld;
+		
 		bool _hasBeganPlay;
+		bool _physicsEnabled;
 
 		sf::Sprite _sprite;
 		shared_ptr<sf::Texture> _texture;
+		
+		b2Body* _physicsBody;
 
 	};
 }

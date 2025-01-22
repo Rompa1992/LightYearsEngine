@@ -8,9 +8,16 @@
     - AssetManager: AssetManager& Get()
     - AssetManager: LoadTexture()
     - AssetManager: CleanCycle()
+    - PhysicsSystem: Singleton Design and Protected Constructor
+    - PhysicsSystem::AddListener()
 
 - Code Fundementals 
     - When to Forward Declare vs Include
+    - Lambda Functions in C++
+
+- Output Bugs
+
+- Inline Errors
 
 
 
@@ -571,6 +578,165 @@ The `CleanCycle` function ensures efficient memory management by cleaning up tex
        {"texture3.png", shared_ptr<sf::Texture>}  // In use
    }
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# PhysicsSystem: Singleton Design and Protected Constructor
+
+## Purpose of the Protected Constructor
+
+The constructor for `PhysicsSystem` is **protected** to enforce the **singleton pattern**. This design prevents direct instantiation of the `PhysicsSystem` class outside the class itself or its friends, ensuring that the class can only be created and accessed through the static `Get()` function.
+
+---
+
+## How the `Get()` Function Works
+
+```cpp
+PhysicsSystem& PhysicsSystem::Get()
+{
+    if (!_physicsSystem)
+        _physicsSystem = std::move(std::unique_ptr<PhysicsSystem>{new PhysicsSystem});
+
+    return *_physicsSystem;
+}
+```
+
+### Key Steps in `Get()`:
+1. **Checks for Initialization**: 
+   - If `_physicsSystem` is `nullptr`, it means the instance doesn't exist yet.
+2. **Creates the Instance**:
+   - A new `PhysicsSystem` object is allocated on the heap.
+   - The constructor is called within the class, which is allowed due to the `protected` access specifier.
+3. **Returns the Instance**:
+   - The reference to the single `PhysicsSystem` object is returned, ensuring global access.
+
+---
+
+## Why Use a Protected Constructor?
+
+1. **Prevents Direct Instantiation**:
+   - Code like `PhysicsSystem ps;` or `PhysicsSystem* ps = new PhysicsSystem;` would result in a *compilation error* since the constructor isn't accessible outside the class.
+
+2. **Encapsulates Creation**:
+   - Ensures that all instances of `PhysicsSystem` are managed through the `Get()` function, maintaining strict control over how the instance is created and used.
+   
+   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
+
+
+# PhysicsSystem::AddListener()
+
+This function integrates an `Actor` instance into the Box2D physics world by creating a `b2Body` based on the actor's properties. Here's a detailed breakdown of the code:
+
+---
+
+## Code Breakdown
+
+### **1. Function Signature**
+
+```cpp
+b2Body* PhysicsSystem::AddListener(Actor* listener)
+```
+
+- **Purpose**: Adds an `Actor` to the physics system by creating a `b2Body` associated with it.
+- **Returns**: A pointer to the created `b2Body`, or `nullptr` if the `Actor` is invalid.
+
+---
+
+### **2. Check for Pending Destruction**
+
+```cpp
+if (listener->IsPendingDestroy()) return nullptr;
+```
+
+- **Purpose**: Ensures the `Actor` is not marked for destruction before proceeding.
+- **Effect**: Prevents adding invalid or soon-to-be-removed `Actors` to the physics world.
+
+---
+
+### **3. Create and Configure `b2BodyDef`**
+
+```cpp
+b2BodyDef bodyDef;
+bodyDef.type = b2_dynamicBody;
+bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(listener);
+bodyDef.position.Set(listener->GetActorLocation().x * GetPhysicsScale(),
+                     listener->GetActorLocation().y * GetPhysicsScale());
+bodyDef.angle = DegreesToRadians(listener->GetActorRotation());
+```
+
+- **`b2BodyDef`**: Defines the properties of the physics body.
+- **`bodyDef.type`**: Sets the body type to `b2_dynamicBody`, meaning the body can move and interact with forces.
+- **`bodyDef.userData.pointer`**: Links the `Actor` to the `b2Body` for identification and interaction.
+- **`bodyDef.position`**: Sets the initial position of the body, scaled to match the physics system's units.
+- **`bodyDef.angle`**: Sets the initial rotation of the body in radians.
+
+---
+
+### **4. Create the `b2Body`**
+
+```cpp
+b2Body* body = _physicsWorld.CreateBody(&bodyDef);
+```
+
+- **Purpose**: Adds the configured body to the Box2D world.
+- **Returns**: A pointer to the newly created `b2Body`.
+
+---
+
+### **5. Configure Collision Shape**
+
+```cpp
+b2PolygonShape shape;
+auto bound = listener->GetActorGlobalBounds();
+shape.SetAsBox(bound.width / 2.f * GetPhysicsScale(), bound.height / 2.f * GetPhysicsScale());
+```
+
+- **`b2PolygonShape`**: Represents a rectangular collision shape.
+- **`GetActorGlobalBounds`**: Retrieves the actor's dimensions (width and height).
+- **`SetAsBox`**: Configures the shape as a rectangle centered on the body.
+
+---
+
+### **6. Define `b2FixtureDef`**
+
+```cpp
+b2FixtureDef fixtureDef;
+fixtureDef.shape = &shape;
+fixtureDef.density = 1.0f;
+fixtureDef.friction = 0.3f;
+fixtureDef.isSensor = true;
+```
+
+- **`b2FixtureDef`**: Defines the physical properties of the shape.
+  - **`shape`**: Links the collision shape to the fixture.
+  - **`density`**: Determines the body's mass.
+  - **`friction`**: Specifies how the body interacts with surfaces.
+  - **`isSensor`**: Marks the body as a sensor, meaning it detects overlaps but does not collide.
+
+---
+
+### **7. Attach the Fixture**
+
+```cpp
+body->CreateFixture(&fixtureDef);
+```
+
+- **Purpose**: Adds the configured fixture to the `b2Body`, enabling collision detection.
+
+---
+
+### **8. Return the Created Body**
+
+```cpp
+return body;
+```
+
+- **Purpose**: Provides a reference to the created `b2Body` for further use or tracking.
+
+
 
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -751,3 +917,129 @@ This document provides guidelines on when to use forward declarations and when t
 | Templates                                     | No              | Yes     |
 | Cyclic dependencies                           | Yes             | No      |
 
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# Lambda Functions in C++
+
+## Introduction
+Lambda functions are a concise way to define inline functions directly within your code. They are commonly used for tasks such as callbacks, custom sort operations, or small operations where creating a separate function would be overkill. 
+This lesson will cover their syntax, use cases, and examples to deepen your understanding.
+
+---
+
+## Syntax
+A lambda function in C++ follows this structure:
+
+```cpp
+[ capture_list ] ( parameters ) -> return_type {
+    // function body
+};
+```
+
+### Components
+1. **Capture List (`[]`)**: Specifies which variables from the surrounding scope the lambda captures and how it captures them (by value or reference).
+2. **Parameters (`()`):** Optional; the arguments passed to the lambda function.
+3. **Return Type (`-> type`)**: Optional; if omitted, the return type is deduced automatically.
+4. **Function Body (`{}`):** The code that the lambda executes.
+
+---
+
+## Example
+Here is a simple example to illustrate how to define and use a lambda function:
+
+```cpp
+#include <iostream>
+#define LOG(msg, var) std::cout << msg << var << std::endl
+
+int main() {
+    // Defining a lambda function
+    auto func = [](float var) {
+        LOG("The value of var is ", var);
+    };
+
+    // Calling the lambda
+    func(3.14f);
+
+    return 0;
+}
+```
+
+### Explanation:
+1. **Capture List:** Empty (`[]`), meaning the lambda does not capture any variables from the surrounding scope.
+2. **Parameters:** One parameter of type `float` named `var`.
+3. **Return Type:** Not explicitly specified; deduced as `void` since the lambda does not return a value.
+4. **Function Body:** Logs the value of `var` using a macro.
+
+---
+
+## Advanced Usage
+
+### Capturing Variables
+You can capture variables from the surrounding scope by value or by reference:
+
+#### By Value
+```cpp
+int a = 10;
+auto func = [a]() {
+    std::cout << "Captured by value: " << a << std::endl;
+};
+func();
+```
+
+#### By Reference
+```cpp
+int a = 10;
+auto func = [&a]() {
+    a++;
+    std::cout << "Captured by reference: " << a << std::endl;
+};
+func();
+```
+
+### Generic Lambdas
+Lambdas can use `auto` in the parameter list to support generic operations:
+
+```cpp
+auto func = [](auto x, auto y) {
+    return x + y;
+};
+
+std::cout << func(3, 4) << std::endl; // Outputs: 7
+std::cout << func(3.5, 4.5) << std::endl; // Outputs: 8.0
+```
+
+### Stateful Lambdas
+Lambdas can hold state when variables are captured by value and marked `mutable`:
+
+```cpp
+int counter = 0;
+auto increment = [counter]() mutable {
+    return ++counter;
+};
+
+std::cout << increment() << std::endl; // Outputs: 1
+std::cout << increment() << std::endl; // Outputs: 2
+```
+
+---
+
+## Best Practices
+- Use lambdas for short, inline operations.
+- Avoid overly complex lambdas; use named functions if the logic is intricate.
+- Be mindful of variable capture to avoid unintended side effects.
+
+---
+
+## Exercises
+
+1. Define a lambda that takes two integers and returns their product.
+2. Create a lambda that captures a variable by reference and modifies it.
+3. Write a generic lambda that concatenates two strings.
+
+---
+
+## Conclusion
+Lambda functions are a powerful feature in C++, allowing for flexible and concise code. By mastering their syntax and use cases, you can write cleaner and more efficient programs.
