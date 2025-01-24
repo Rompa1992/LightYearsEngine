@@ -8,23 +8,23 @@ namespace ly
 {{
 
 
-	/// Public Functions
-	/// -----------------
+	/// Public Members
+	/// --------------
 
-	/// Void
-
-
-	/// Override
+	/// void
 
 
-	/// Setters
+	/// override
 
 
-	/// Getters
+	/// Set
 
 
-	/// Private Functions
-	/// -----------------
+	/// Get
+
+
+	/// Private Members
+	/// ---------------
 
 
 }}

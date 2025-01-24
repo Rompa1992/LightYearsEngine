@@ -1,8 +1,10 @@
 #include "framework/Application.h"
+
 #include "framework/AssetManager.h"
 #include "framework/Core.h"
-#include "framework/World.h"
 #include "framework/PhysicsSystem.h"
+#include "framework/TimerManager.h"
+#include "framework/World.h"
 
 namespace ly
 {
@@ -57,6 +59,8 @@ namespace ly
 			_currentWorld->TickInternal(deltaTime);
 		}
 
+		TimerManager::Get().UpdateTimer(deltaTime);
+
 		PhysicsSystem::Get().Step(deltaTime);
 
 		if (_cleanCycleClock.getElapsedTime().asSeconds() >= _CleanCycleInterval)
@@ -71,7 +75,7 @@ namespace ly
 
 	void Application::Tick(float deltaTime)
 	{
-		//LOG("ticking at framerate: %f", 1.f / deltaTime);																		    // A macro like LOG is processed during the preprocessing phase, which occurs before the actual compilation step.
+		//LOG("ticking at framerate: %f", 1.f / deltaTime);																	// A macro like LOG is processed during the preprocessing phase, which occurs before the actual compilation step.
 	}
 
 	void Application::RenderInternal()

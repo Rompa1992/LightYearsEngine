@@ -3,13 +3,15 @@
 #include <SFML/Graphics.hpp>
 
 #include "framework/Core.h"
+#include "framework/Object.h"
 
 namespace ly
 {
 	class Actor;																										// CodeExplanations->When to Forward Declare vs Include
 	class Application;
+	class GameStage;
 
-	class World
+	class World : public Object 
 	{
 	public:
 		World(Application* owningApp);
@@ -18,6 +20,7 @@ namespace ly
 		void TickInternal(float deltaTime);
 		void Render(sf::RenderWindow& window);
 		void CleanCycle();
+		void AddStage(const shared_ptr<GameStage>& newStage);
 
 		sf::Vector2u GetWindowSize() const;
 
@@ -27,14 +30,22 @@ namespace ly
 		virtual ~World();																								// Use a virtual destructor in base classes to ensure proper cleanup of derived class objects. This ensures that derived class destructors are called properly during deletion, preventing resource leaks or undefined behaviour
 
 	private:
-		void BeginPlay();
-		void Tick(float deltaTime);
+		void NextGameStage();
 
+		virtual void BeginPlay();
+		virtual void Tick(float deltaTime);
+
+		virtual void InitGameStages();
+		virtual void AllGameStagesFinished();
+
+		int _currentStageIndex;
 		Application* _owningApp;
 		bool _hasBeganPlay;
 
 		List<shared_ptr<Actor>> _actors;
 		List<shared_ptr<Actor>> _pendingActors;
+		List<shared_ptr<GameStage>> _gameStages;
+
 	};
 
 	template<typename ActorType, typename... Args>

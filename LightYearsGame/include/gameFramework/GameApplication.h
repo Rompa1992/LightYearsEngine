@@ -12,8 +12,8 @@ namespace ly
 		GameApplication();
 
 		virtual void Tick(float deltaTime) override;
+
 	private:
-		float _counter;
-		weak_ptr<PlayerSpaceship> _testPlayerSpaceship;
+
 	};
 }

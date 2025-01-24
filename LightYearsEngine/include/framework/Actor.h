@@ -30,7 +30,7 @@ namespace ly
 		virtual void OnEndActorOverlap(Actor* hitActor);
 		virtual void ApplyDamage(float amount);
 
-		bool IsActorOutOfWindowBounds() const;
+		bool IsActorOutOfWindowBounds(float allowence = 200) const;
 		bool IsOtherTeamHostile(Actor* other);
 
 		void SetTexture(const std::string& texturePath);
