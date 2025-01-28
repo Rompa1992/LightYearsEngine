@@ -18,9 +18,9 @@ namespace ly
 	/// void
 	void GameStage::FinsishStage()
 	{
-		onStageFinished.BroadCast();
 		_stageFinished = true;
-		StageFinsihed();
+		StageFinished();
+		onStageFinished.BroadCast();
 	}
 
 	/// virtual void
@@ -31,7 +31,7 @@ namespace ly
 
 	void GameStage::TickStage(float deltaTime)
 	{
-		LOG("stage Ticking");
+		//LOG("stage Ticking");
 	}
 
 	/// Set
@@ -42,7 +42,7 @@ namespace ly
 
 	/// Private Members
 	/// ---------------
-	void GameStage::StageFinsihed()
+	void GameStage::StageFinished()
 	{
 		LOG("stage Finished");
 	}

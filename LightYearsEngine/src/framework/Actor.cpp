@@ -181,7 +181,7 @@ namespace ly
 		return RotationToVector(GetActorRotation() - 90.f);
 	}
 
-	sf::Vector2f Actor::GetActorForwardRight() const
+	sf::Vector2f Actor::GetActorRightDirection() const
 	{
 		return RotationToVector(GetActorRotation());
 	}

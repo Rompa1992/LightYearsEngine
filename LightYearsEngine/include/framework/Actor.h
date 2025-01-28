@@ -44,7 +44,7 @@ namespace ly
 		const sf::Sprite& GetSprite() const { return _sprite; }
 		sf::Sprite& GetSprite() { return _sprite; }
 		sf::Vector2f GetActorForwardDirection() const;
-		sf::Vector2f GetActorForwardRight() const;
+		sf::Vector2f GetActorRightDirection() const;
 		sf::Vector2u GetWindowSize() const;
 		sf::FloatRect GetActorGlobalBounds() const;
 		const World* GetWorld() const { return _owningWorld; }	

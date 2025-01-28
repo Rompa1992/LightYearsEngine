@@ -24,7 +24,7 @@ namespace ly
 		Delegate<> onStageFinished;
 
 	private:
-		virtual void StageFinsihed();
+		virtual void StageFinished();
 
 		World* _world;
 		bool _stageFinished;

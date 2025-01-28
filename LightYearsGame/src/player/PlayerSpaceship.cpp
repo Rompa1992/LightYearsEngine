@@ -1,5 +1,6 @@
 #include "player/PlayerSpaceship.h"
 #include "weapon/BulletShooter.h"
+#include "weapon/ThreeWayShooter.h"
 
 #include <SFML/System.hpp>
 #include <framework/MathUtility.h>
@@ -10,7 +11,7 @@ namespace ly
 		: Spaceship_Base{ owningWorld, texturePath },
 		_moveInput{},
 		_speed{ 500 },
-		_shooter{ new BulletShooter{this, 0.15f} }
+		_shooter{ new ThreeWayShooter{this, 0.15f, {50.f, 0.f}} }
 	{
 		SetTeamID(1);
 	}
@@ -30,8 +31,8 @@ namespace ly
 		}
 	}
 
-	// Private Functions ----------------------
-	// ----------------------------------------
+	// Private Functions ======================
+	// ========================================
 	void PlayerSpaceship::HandleInput()
 	{
 		// movement
@@ -48,7 +49,7 @@ namespace ly
 		ClampInputEdge();
 		NormalizeInput();
 
-		// shoot
+		// SHOOT 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::J))
 			Shoot();
 	}
@@ -56,7 +57,6 @@ namespace ly
 	void PlayerSpaceship::NormalizeInput()
 	{
 		NormalizeVector(_moveInput);
-		//LOG("move input: %f, %f", _moveInput.x, _moveInput.y);
 	}
 
 	void PlayerSpaceship::ClampInputEdge()

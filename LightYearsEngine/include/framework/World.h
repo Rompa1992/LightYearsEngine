@@ -31,6 +31,7 @@ namespace ly
 
 	private:
 		void NextGameStage();
+		void StartStages();
 
 		virtual void BeginPlay();
 		virtual void Tick(float deltaTime);
@@ -38,13 +39,13 @@ namespace ly
 		virtual void InitGameStages();
 		virtual void AllGameStagesFinished();
 
-		int _currentStageIndex;
 		Application* _owningApp;
 		bool _hasBeganPlay;
 
 		List<shared_ptr<Actor>> _actors;
 		List<shared_ptr<Actor>> _pendingActors;
 		List<shared_ptr<GameStage>> _gameStages;
+		List<shared_ptr<GameStage>>::iterator _currentStage;
 
 	};
 

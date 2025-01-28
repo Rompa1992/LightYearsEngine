@@ -22,7 +22,7 @@ namespace ly
 	void Enemy_Base::Tick(float deltaTime)
 	{
 		Spaceship_Base::Tick(deltaTime);
-		if (IsActorOutOfWindowBounds(GetActorGlobalBounds().width))
+		if (IsActorOutOfWindowBounds(GetActorGlobalBounds().width * 2.f))
 			Destroy();
 	}
 

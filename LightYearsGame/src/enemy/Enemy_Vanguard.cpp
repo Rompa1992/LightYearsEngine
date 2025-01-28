@@ -9,14 +9,10 @@ namespace ly
 	/// -----------------
 	Enemy_Vanguard::Enemy_Vanguard(World* owningWorld, const std::string& texturePath, const sf::Vector2f& velocity)
 		: Enemy_Base{owningWorld, texturePath},
-		_shooter{ new BulletShooter{this} }
+		_shooter{ new BulletShooter{ this, 1.f, {50.f, 0.f }} }
 	{
 		SetVelocity(velocity);
 	}
-
-
-	/// Void
-
 
 	/// Override
 	void Enemy_Vanguard::Tick(float deltaTime)
@@ -24,12 +20,6 @@ namespace ly
 		Enemy_Base::Tick(deltaTime);
 		Shoot();
 	}
-
-	/// Setters
-
-
-	/// Getters
-
 
 	/// Private Functions
 	/// -----------------

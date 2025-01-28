@@ -1,10 +1,14 @@
 #include "levels/LevelOne.h"
-#include "enemy/Enemy_Vanguard.h"
-#include "player/PlayerSpaceship.h"
-
 #include <framework/Actor.h>
 #include <framework/AssetManager.h>
 #include <framework/TimerManager.h>
+#include <gameplay/GameStage.h>
+#include "enemy/Stage_Hexagon.h"
+#include "enemy/Stage_TwinBlade.h"
+#include "enemy/Stage_Vanguard.h"
+#include "gameplay/WaitStage.h"
+#include "player/PlayerSpaceship.h"
+
 
 namespace ly
 {
@@ -21,35 +25,22 @@ namespace ly
 		_testPlayerSpaceship = SpawnActor<PlayerSpaceship>();
 		_testPlayerSpaceship.lock()->SetActorLocation(sf::Vector2f(300.f, 490.f));
 
-		weak_ptr<Enemy_Vanguard> testSpaceship = SpawnActor<Enemy_Vanguard>();
-		testSpaceship.lock()->SetActorLocation(sf::Vector2f{ 100.f, 50.f });
-
-	}
-
-	void LevelOne::BeginPlay()
-	{
-		_timerHandle_Test = TimerManager::Get().SetTimer(GetWeakRef(), &LevelOne::TimerCallback_Test, 2, true);
-	}
-
-	void LevelOne::TimerCallback_Test()
-	{
-		LOG("callback called! lvl one");
-		TimerManager::Get().ClearTimer(_timerHandle_Test);
 	}
 
 	/// Void
+	void LevelOne::BeginPlay()
+	{
+		
+	}
+
+	void LevelOne::InitGameStages()
+	{
+		AddStage(shared_ptr<Stage_Vanguard>{ new Stage_Vanguard{ this }});
+		AddStage(shared_ptr<WaitStage>{ new WaitStage{ this, 5.f }});
+		AddStage(shared_ptr<Stage_TwinBlade>{ new Stage_TwinBlade{ this }});
+		AddStage(shared_ptr<WaitStage>{ new WaitStage{ this, 5.f }});
+		AddStage(shared_ptr<Stage_Hexagon>{ new Stage_Hexagon{ this }});
+	}
 
 
-	/// Override
-
-
-	/// Setters
-
-
-	/// Getters
-
-
-
-	/// Private Functions
-	/// -----------------
 }
